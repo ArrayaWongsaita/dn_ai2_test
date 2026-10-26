@@ -1,0 +1,646 @@
+/* ===========================================================================
+   Task Detail Drawer + confirm dialog (docs/02 S08, docs/05 §2-§7, docs/06 §9).
+
+   Two layers: the generic shell (.drawer, .dialog) and the task body (.td-*).
+   The shell is what Wave 6's Create Task drawer and the archive / deactivate
+   confirmations reuse, so nothing task-specific leaks into it.
+   =========================================================================== */
+
+/* --- Shell ---------------------------------------------------------------- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background: var(--overlay);
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.drawer-overlay.is-open { opacity: 1; }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--z-drawer) + 1);
+  display: flex;
+  width: min(var(--drawer-w), calc(100vw - 32px));
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform var(--dur-slow) var(--ease);
+}
+.drawer.is-open { transform: translateX(0); }
+
+/* The answer to an overlay click with unsaved edits (docs/05 §2). */
+@keyframes drawer-nudge {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-7px); }
+  75%      { transform: translateX(5px); }
+}
+.drawer.drawer--nudge.is-open { animation: drawer-nudge var(--dur-nudge) var(--ease) 1; }
+
+/* --- Confirm dialog ------------------------------------------------------- */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  background: var(--overlay);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.dialog-overlay.is-open { opacity: 1; }
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--sp-6);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(8px) scale(0.98);
+  transition: transform var(--dur-base) var(--ease);
+}
+.dialog-overlay.is-open .dialog { transform: translateY(0) scale(1); }
+
+.dialog__lead { margin-bottom: var(--sp-4); }
+.dialog__title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+.dialog__body {
+  margin-top: var(--sp-3);
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+}
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-6);
+}
+
+/* --- Task detail: frame --------------------------------------------------- */
+.td {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.td-head {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.td-head__top { display: flex; align-items: center; gap: var(--sp-2); }
+.td-head__title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+.td-head__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.td-head__link { color: var(--purple-bright); font-weight: var(--fw-medium); }
+.td-head__link:hover { text-decoration: underline; }
+.td-head__dot {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--text-muted); flex: 0 0 auto;
+}
+
+.td-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* --- Sections ------------------------------------------------------------- */
+.td-section { display: flex; flex-direction: column; gap: var(--sp-3); }
+.td-section__head { display: flex; align-items: center; gap: var(--sp-2); }
+.td-section__title {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.td-section__count {
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--neutral-soft);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.td-note { font-size: var(--fs-xs); color: var(--text-muted); }
+.td-empty {
+  padding: var(--sp-4);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* --- Field grid ----------------------------------------------------------- */
+.td-fields {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.td-field { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+.td-field__label {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.td-field__value {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--fs-md);
+}
+
+/* Fallback for engines without grid subgrid: the two-column look still holds
+   because each row is its own grid of the same track sizes. */
+@supports not (grid-template-columns: subgrid) {
+  .td-fields { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .td-field { display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: center; gap: var(--sp-4); }
+}
+
+/* --- Inline editors ------------------------------------------------------- */
+.td-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.td-select:hover { background: var(--bg-surface-hover); border-color: var(--border); }
+.td-select[aria-expanded="true"] { background: var(--bg-surface-hover); border-color: var(--border-strong); }
+
+/* A locked field is the one place docs/04 prefers disabled over hidden — it
+   is what teaches the rule. */
+.td-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-md);
+  background: var(--neutral-soft);
+  color: var(--text-muted);
+  cursor: help;
+}
+
+/* Colour is never the only signal — the menu rows carry their label too. */
+.td-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+.td-dot--todo        { background: var(--text-muted); }
+.td-dot--in_progress { background: var(--info); }
+.td-dot--review      { background: var(--purple-primary); }
+.td-dot--completed   { background: var(--success); }
+.td-dot--blocked     { background: var(--danger); }
+.td-dot--cancelled   { background: var(--border-strong); }
+.td-dot--low         { background: var(--text-muted); }
+.td-dot--medium      { background: var(--info); }
+.td-dot--high        { background: var(--warning); }
+.td-dot--urgent      { background: var(--danger); }
+
+.td-deadline { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.td-date { width: 148px; height: 32px; font-size: var(--fs-sm); }
+.td-date::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+/* A date input's focus lands on its inner day/month/year segments, and the
+   host never matches :focus-visible — so the shared .input ring never drew
+   (found by the Wave 8 focus sweep). :focus-within reaches it. */
+.td-date:focus-within {
+  border-color: var(--purple-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.td-person { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.td-person__you {
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--purple-soft);
+  color: var(--purple-bright);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+.td-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* --- Progress (docs/05 §5) ----------------------------------------------- */
+.td-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.td-progress__top { display: flex; align-items: center; gap: var(--sp-4); }
+.td-progress__top .progress { flex: 1 1 auto; }
+/* Progress is one of this screen's two headline actions — give it presence. */
+.td-progress__top .progress__track { height: 10px; }
+.td-progress__value {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+.td-progress__quick { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+.td-chip {
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.td-chip:hover { background: var(--bg-surface-hover); color: var(--text-primary); border-color: var(--border-strong); }
+.td-chip.is-active {
+  background: var(--purple-soft);
+  border-color: var(--purple-primary);
+  color: var(--purple-bright);
+}
+
+.range {
+  width: 100%;
+  height: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--purple-primary);
+  border: 2px solid var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.range::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+}
+.range::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--purple-primary);
+  border: 2px solid var(--bg-surface);
+}
+.range:hover::-webkit-slider-thumb { background: var(--purple-bright); }
+.range:focus-visible { outline: none; }
+.range:focus-visible::-webkit-slider-thumb { box-shadow: var(--focus-ring); }
+.range:focus-visible::-moz-range-thumb { box-shadow: var(--focus-ring); }
+
+/* --- Description + mock editor (docs/05 §6) ------------------------------ */
+.td-desc {
+  display: block;
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  text-align: left;
+  cursor: text;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+button.td-desc:hover { border-color: var(--border-strong); background: var(--bg-card-hover); }
+.td-desc.is-empty { color: var(--text-muted); font-style: italic; }
+.td-desc p { margin: 0 0 var(--sp-2); }
+.td-desc p:last-child { margin-bottom: 0; }
+/* base.css resets list-style for the nav lists; rich text needs it back or
+   the editor's list buttons produce indentation and nothing else. */
+.td-desc ul, .rte__area ul { list-style: disc; }
+.td-desc ol, .rte__area ol { list-style: decimal; }
+.td-desc ul, .td-desc ol { margin: 0 0 var(--sp-2); padding-left: var(--sp-5); }
+.td-desc li { margin-bottom: var(--sp-1); }
+.td-desc a { color: var(--purple-bright); text-decoration: underline; }
+.td-desc img { max-width: 100%; border-radius: var(--radius-sm); margin: var(--sp-2) 0; }
+
+.rte {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--purple-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+.rte__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.rte__sep { width: 1px; height: 18px; background: var(--border); margin: 0 var(--sp-1); }
+.rte__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.rte__tool:hover { background: var(--bg-surface-hover); color: var(--text-primary); border-color: var(--border); }
+
+.rte__area {
+  min-height: 112px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4);
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+}
+.rte__area:focus-visible { outline: none; box-shadow: none; }
+.rte__area ul, .rte__area ol { margin: 0 0 var(--sp-2); padding-left: var(--sp-5); }
+.rte__area li { margin-bottom: var(--sp-1); }
+.rte__area a { color: var(--purple-bright); text-decoration: underline; }
+.rte__area img { max-width: 100%; border-radius: var(--radius-sm); margin: var(--sp-2) 0; }
+
+.rte__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+/* --- Attachments (docs/08 §8) -------------------------------------------- */
+.td-file-input { display: none; }
+
+.td-files { display: flex; flex-direction: column; gap: var(--sp-2); }
+.td-file {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.td-file__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--purple-soft);
+  color: var(--purple-bright);
+  flex: 0 0 auto;
+}
+.td-file__thumb {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+}
+.td-file__text { display: flex; flex-direction: column; min-width: 0; }
+.td-file__name {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.td-file__meta { font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* --- Comments (docs/05 §7) ----------------------------------------------- */
+.td-comments { display: flex; flex-direction: column; gap: var(--sp-3); }
+.td-comment { display: flex; gap: var(--sp-3); }
+.td-comment__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.td-comment__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+.td-comment__time { font-size: var(--fs-xs); color: var(--text-muted); }
+.td-comment__text {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  line-height: var(--lh-normal);
+  white-space: pre-wrap;
+}
+
+.td-comment-form { display: flex; gap: var(--sp-3); }
+.td-comment-form__fields { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.td-comment-input { min-height: 72px; font-size: var(--fs-md); }
+.td-comment-form__actions { display: flex; align-items: center; gap: var(--sp-2); }
+
+/* --- Activity timeline (docs/07 §6) ------------------------------------- */
+.td-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  position: relative;
+}
+.td-event {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+}
+.td-event + .td-event { border-top: 1px solid var(--border); }
+.td-event__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+}
+.td-event[data-type="STATUS_CHANGED"] .td-event__icon,
+.td-event[data-type="PROGRESS_CHANGED"] .td-event__icon { color: var(--purple-bright); }
+.td-event[data-type="REASSIGNED"] .td-event__icon { color: var(--info); }
+
+.td-event__body { flex: 1 1 auto; min-width: 0; }
+.td-event__text {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  line-height: var(--lh-normal);
+}
+.td-event__quote {
+  margin-top: var(--sp-1);
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--border-strong);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+.td-event__time {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  padding-top: var(--sp-1);
+}
+
+/* --- Responsive (docs/05 §12) ------------------------------------------- */
+@media (max-width: 720px) {
+  .drawer { width: 100vw; border-left: 0; }
+  .td-body { padding: var(--sp-4); }
+  .td-fields { grid-template-columns: 88px minmax(0, 1fr); padding: var(--sp-3); }
+  .td-progress__top { gap: var(--sp-3); }
+}
+
+/* ===========================================================================
+   Wave 6 additions.
+
+   .td-foot pins Cancel / Create Task to the bottom of the Create Task drawer.
+   .td-body already owns the scroll, so the footer only has to refuse to grow.
+   The shape is lifted from .rte__actions above, which is the same idea one
+   level down.
+   =========================================================================== */
+.td-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.td-foot__note { font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* A form section inside the drawer stacks fields; the drawer body already
+   supplies the gap between sections. */
+.td-form { display: flex; flex-direction: column; gap: var(--sp-4); }
+.td-form__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+
+/* Chips for a multi-select (collaborators). .filter-chip already carries the
+   remove-on-hover treatment, so this only handles the empty case. */
+.chip-row { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.chip-row__empty { font-size: var(--fs-sm); color: var(--text-muted); }
+
+/* --- Modal: Confirm's form-shaped sibling (D47) -------------------------- */
+/* --- Rename in place (D56) ----------------------------------------------- */
+.td-title-edit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  border-radius: var(--radius-sm);
+}
+.td-title-edit .icon { color: var(--text-muted); opacity: 0; transition: opacity var(--dur-fast) var(--ease); }
+.td-title-edit:hover { color: var(--purple-bright); }
+.td-title-edit:hover .icon, .td-title-edit:focus-visible .icon { opacity: 1; }
+
+.td-head__rename { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.td-title-input { flex: 1 1 220px; min-width: 0; font-size: var(--fs-lg); font-weight: var(--fw-medium); }
+
+/* A date field inside a form fills its column rather than sitting at the
+   148px the drawer's read-mode row uses. */
+.td-form .td-date { width: 100%; height: 36px; }
+
+/* In a form a select has to look like an input, not like the transparent
+   read-mode trigger the drawer's field rows use. */
+.td-select--input {
+  width: 100%;
+  justify-content: flex-start;
+  height: 36px;
+  padding: 0 var(--sp-3);
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+.td-select--input:hover { background: var(--bg-surface); border-color: var(--border-strong); }
+.td-select--input[aria-expanded="true"] { border-color: var(--purple-primary); }
+.td-select--input .icon:last-child { margin-left: auto; color: var(--text-muted); }
+.td-select--input .td-select__placeholder { color: var(--text-muted); }
+
+.dialog--form { max-width: 460px; }
+.dialog__form { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-5); }
+
+
+@media (max-width: 720px) {
+  .td-form__row { grid-template-columns: minmax(0, 1fr); }
+}

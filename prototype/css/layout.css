@@ -1,0 +1,287 @@
+/* ===========================================================================
+   App shell: sidebar + topbar + main view slot (docs/02 §1, docs/06 §4).
+   =========================================================================== */
+
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  grid-template-areas:
+    "sidebar topbar"
+    "sidebar main";
+  height: 100vh;
+  transition: grid-template-columns var(--dur-base) var(--ease);
+}
+.app.is-collapsed { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+
+/* The login screen takes the whole viewport — no shell chrome. */
+.app.is-bare {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "main";
+}
+.app.is-bare .sidebar,
+.app.is-bare .topbar { display: none; }
+
+/* --- Sidebar ------------------------------------------------------------- */
+.sidebar {
+  grid-area: sidebar;
+  z-index: var(--z-sidebar);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-4);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+}
+.sidebar__brand { transition: background var(--dur-fast) var(--ease); }
+.sidebar__brand:hover { background: var(--bg-surface-hover); }
+.sidebar__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: linear-gradient(140deg, var(--purple-primary), var(--indigo-accent));
+  color: var(--text-on-accent);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+}
+.sidebar__name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.sidebar__nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.nav-group__label {
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-3);
+  height: 38px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.nav-item:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.nav-item.is-active {
+  background: var(--purple-soft);
+  color: var(--text-primary);
+  box-shadow: inset 2px 0 0 var(--purple-primary);
+}
+.nav-item__label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.nav-item__count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-align: center;
+}
+
+/* --- Sidebar footer: who am I ------------------------------------------- */
+.sidebar__footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border);
+  padding: var(--sp-3);
+}
+.profile-block {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.profile-block:hover { background: var(--bg-surface-hover); border-color: var(--border-strong); }
+.profile-block[aria-expanded="true"] { border-color: var(--purple-primary); background: var(--bg-surface-hover); }
+.profile-block__chevron { color: var(--text-muted); flex: 0 0 auto; }
+.profile-block[aria-expanded="true"] .profile-block__chevron { color: var(--purple-bright); }
+.profile-block__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.profile-block__name {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-block__role {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* --- Collapsed rail ------------------------------------------------------ */
+.app.is-collapsed .sidebar__name,
+.app.is-collapsed .nav-item__label,
+.app.is-collapsed .nav-item__count,
+.app.is-collapsed .nav-group__label,
+.app.is-collapsed .profile-block__text,
+.app.is-collapsed .profile-block__chevron { display: none; }
+.app.is-collapsed .sidebar__brand { justify-content: center; padding: 0; }
+.app.is-collapsed .nav-item { justify-content: center; padding: 0; }
+.app.is-collapsed .profile-block { justify-content: center; padding: var(--sp-2) 0; }
+
+/* --- Topbar -------------------------------------------------------------- */
+.topbar {
+  grid-area: topbar;
+  z-index: var(--z-topbar);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.breadcrumb__item {
+  color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 220px;
+}
+.breadcrumb__item:hover { color: var(--text-primary); }
+.breadcrumb__item.is-current { color: var(--text-primary); font-weight: var(--fw-medium); }
+.breadcrumb .icon { color: var(--text-muted); }
+
+.topbar__search { width: 260px; }
+
+.topbar__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.topbar__avatar:hover { border-color: var(--border-strong); background: var(--bg-surface-hover); }
+.topbar__avatar[aria-expanded="true"] { border-color: var(--purple-primary); }
+
+.topbar__bell { position: relative; }
+.topbar__bell .bell-dot {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: var(--bg-app);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Main ---------------------------------------------------------------- */
+.main {
+  grid-area: main;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-app);
+}
+.main:focus-visible { box-shadow: none; }
+
+.view {
+  padding: var(--sp-6) var(--sp-8) var(--sp-10);
+  max-width: var(--content-max);
+}
+.view--flush { padding: 0; max-width: none; height: 100%; }
+
+.view__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.view__header .spacer { flex: 1 1 auto; }
+.view__subtitle { color: var(--text-secondary); font-size: var(--fs-md); margin-top: var(--sp-1); }
+
+/* --- Responsive (docs/05 §12) ------------------------------------------- */
+@media (max-width: 1100px) {
+  .app { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+  .app .sidebar__name,
+  .app .nav-item__label,
+  .app .nav-item__count,
+  .app .nav-group__label,
+  .app .profile-block__text,
+  .app .profile-block__chevron { display: none; }
+  .app .sidebar__brand { justify-content: center; padding: 0; }
+  .app .nav-item { justify-content: center; padding: 0; }
+  .app .profile-block { justify-content: center; padding: var(--sp-2) 0; }
+  .topbar__search { width: 180px; }
+  .view { padding: var(--sp-5) var(--sp-5) var(--sp-8); }
+}
+
+@media (max-width: 720px) {
+  /* On a phone the title gets the whole row and the header's actions wrap
+     beneath it. Before this, S05/S10/S11 pushed their primary button off the
+     right edge and the dashboard crushed its welcome line into a column. */
+  .view__header { flex-wrap: wrap; gap: var(--sp-3); }
+  .view__header > :first-child { flex: 1 1 100%; min-width: 0; }
+  .view__header .spacer { display: none; }
+  .topbar__search { display: none; }
+  .breadcrumb__item { max-width: 120px; }
+  .view { padding: var(--sp-4) var(--sp-4) var(--sp-8); }
+}

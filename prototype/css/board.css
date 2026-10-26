@@ -1,0 +1,430 @@
+/* ===========================================================================
+   S06 Projects list and S07 Kanban board (docs/02 S06+S07, docs/06 §4-§6).
+
+   The board owns the whole viewport below the topbar: the header is fixed,
+   the column strip scrolls horizontally, and each column scrolls on its own
+   (docs/02 S07). Nothing here shrinks a column until it stops being readable.
+   =========================================================================== */
+
+/* --- Projects list (S06) ------------------------------------------------- */
+.project-group + .project-group { margin-top: var(--sp-7); }
+.project-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.project-group__name {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+}
+.project-group__count { font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* --- Board shell --------------------------------------------------------- */
+.view--board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  max-width: none;
+  overflow: hidden;
+}
+
+.board__header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-6) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+.board__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.board__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.board__members {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-right: var(--sp-2);
+  margin-right: var(--sp-1);
+  border-right: 1px solid var(--border);
+}
+.board__members-label { font-size: var(--fs-xs); color: var(--text-muted); }
+
+.board__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.board__meta-dot {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex: 0 0 auto;
+}
+.board__hidden-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 1px var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--neutral-soft);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* D71 — the Simulate failure demo toggle announces itself on the board. */
+.board__fail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 1px 2px 1px var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+}
+.board__fail-off {
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  transition: background var(--dur-fast) var(--ease);
+}
+.board__fail-off:hover { background: var(--warning-soft); }
+
+/* --- Column strip -------------------------------------------------------- */
+.board__columns {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--column-gap);
+  padding: var(--sp-5) var(--sp-6) var(--sp-6);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.board__blank {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  overflow: auto;
+}
+
+.column {
+  flex: 0 0 var(--column-w);
+  width: var(--column-w);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  transition: border-color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+  --status-color: var(--text-muted);
+}
+.column--todo        { --status-color: var(--text-secondary); }
+.column--in_progress { --status-color: var(--info); }
+.column--review      { --status-color: var(--purple-bright); }
+.column--completed   { --status-color: var(--success); }
+.column--blocked     { --status-color: var(--danger); }
+
+.column__head {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+/* The subtle status marker docs/06 §6 asks for — a marker, not a paint job. */
+.column__head::before {
+  content: "";
+  position: absolute;
+  top: 0; left: var(--sp-4); right: var(--sp-4);
+  height: 2px;
+  border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+  background: var(--status-color);
+  opacity: 0.85;
+}
+.column__name {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+.column__count {
+  min-width: 24px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.column__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+}
+
+/* --- Drop zone (docs/05 §1) ---------------------------------------------- */
+.column.is-drop-target {
+  border-color: var(--purple-primary);
+  background: var(--bg-surface-hover);
+}
+.column.is-drop-source { border-color: var(--border-strong); }
+
+.column__dropzone {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 62px;
+  border: 1px dashed var(--purple-primary);
+  border-radius: var(--radius-md);
+  background: var(--purple-soft);
+  color: var(--purple-bright);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+.column.is-drop-target .column__dropzone { display: flex; }
+.column.is-drop-target .column__empty { display: none; }
+
+.column__empty {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-5) var(--sp-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.column__empty-title { font-size: var(--fs-sm); color: var(--text-secondary); }
+.column__empty-hint { font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* --- Task card (docs/06 §5) ---------------------------------------------- */
+.task-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease),
+              opacity var(--dur-fast) var(--ease);
+}
+.task-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.task-card.is-selected {
+  border-color: var(--purple-primary);
+  background: var(--bg-card-hover);
+}
+
+/* Drag elevation: the source card lifts and fades while its ghost travels. */
+.task-card.is-dragging {
+  opacity: 0.45;
+  border-color: var(--purple-primary);
+  box-shadow: var(--shadow-lg);
+  transform: rotate(1.2deg);
+  cursor: grabbing;
+}
+body.is-dragging-task .task-card:hover { transform: none; box-shadow: none; }
+
+.task-card__top { display: flex; align-items: center; gap: var(--sp-2); }
+.task-card__done-mark { color: var(--success); display: inline-flex; }
+.task-card__grip {
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: grab;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.task-card:hover .task-card__grip,
+.task-card:focus-visible .task-card__grip { opacity: 1; }
+
+.task-card__title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-card__row { display: flex; align-items: center; gap: var(--sp-2); }
+.task-card__assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.task-card__assignee-name {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 88px;
+}
+
+.task-card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.task-card__stat { display: inline-flex; align-items: center; gap: var(--sp-1); }
+
+/* Completed: muted, out of the way, still readable (docs/06 §5). */
+.task-card--done { opacity: 0.74; }
+.task-card--done:hover { opacity: 1; }
+.task-card--done .task-card__title { color: var(--text-secondary); font-weight: var(--fw-regular); }
+
+/* Overdue paints the chip, never the card (docs/06 §5). */
+.deadline-chip { flex: 0 0 auto; }
+.deadline-chip--soft { background: transparent; }
+
+/* A one-off confirmation pulse after a drop — it is feedback, not decoration. */
+@keyframes task-card-landed {
+  0%   { box-shadow: 0 0 0 0 var(--purple-pulse); }
+  100% { box-shadow: 0 0 0 9px var(--purple-pulse-end); }
+}
+.task-card.is-landed {
+  border-color: var(--purple-primary);
+  animation: task-card-landed var(--dur-pulse) var(--ease) 1;
+}
+
+/* --- Responsive (docs/05 §12) -------------------------------------------- */
+@media (max-width: 1100px) {
+  .board__header { padding: var(--sp-4) var(--sp-5) var(--sp-3); }
+  .board__columns { padding: var(--sp-4) var(--sp-5) var(--sp-5); --column-w: 292px; }
+}
+
+@media (max-width: 720px) {
+  .board__header { padding: var(--sp-4); }
+  .board__columns { padding: var(--sp-4); --column-w: 272px; }
+  .board__members { display: none; }
+}
+
+/* ===========================================================================
+   Wave 5 — the board's search and filter row (docs/05 §11).
+
+   An always-visible row under the meta line: everything on screen, no click
+   needed to discover that filtering exists. It costs ~48px of board height,
+   which the column strip absorbs because it is the flex child that grows.
+   =========================================================================== */
+.board__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding-top: var(--sp-3);
+  margin-top: var(--sp-1);
+  border-top: 1px solid var(--border);
+}
+.board__filters .spacer { flex: 1 1 auto; }
+
+.board__search { width: 240px; flex: 0 0 auto; }
+.board__search .input { height: 32px; font-size: var(--fs-sm); }
+
+.board__filter { max-width: 200px; }
+.board__filter-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* An applied filter is outlined as well as tinted — never colour alone. */
+.board__filter.is-on {
+  border-color: var(--purple-primary);
+  background: var(--purple-soft);
+  color: var(--text-primary);
+}
+.board__filter.is-on .icon { color: var(--purple-bright); }
+
+.board__filter-count {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.board__filter-count.is-idle { color: var(--text-muted); }
+
+/* "2 of 7" — the column still says how much it is really holding (D39). */
+.column__count.is-filtered {
+  background: var(--purple-soft);
+  color: var(--purple-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Filtered down to nothing: the exit stays on screen (D39). */
+.board__no-match {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin: var(--sp-4) var(--sp-6) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+.board__no-match .icon { color: var(--warning); flex: 0 0 auto; }
+.board__no-match .btn { margin-left: auto; }
+
+@media (max-width: 1100px) {
+  .board__search { width: 190px; }
+  .board__no-match { margin: var(--sp-4) var(--sp-5) 0; }
+}
+@media (max-width: 720px) {
+  .board__search { width: 100%; }
+  .board__filter-count { display: none; }
+  .board__no-match { margin: var(--sp-4) var(--sp-4) 0; }
+}

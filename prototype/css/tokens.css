@@ -1,0 +1,156 @@
+/* ===========================================================================
+   Design tokens — the single source of truth for the prototype's visual
+   language. Values come from docs/06-UI-UX-DESIGN-SYSTEM.md.
+   No other stylesheet should contain a raw hex colour.
+   =========================================================================== */
+
+:root {
+  /* --- Surfaces (06 §2) ------------------------------------------------- */
+  --bg-app: #0d0a16;
+  --bg-sidebar: #120d20;
+  --bg-surface: #181126;
+  --bg-surface-hover: #211633;
+  --bg-card: #21182f;
+  --bg-card-hover: #2a1e3b;
+  --border: #35264a;
+  --border-strong: #4a3663;
+
+  /* --- Brand ------------------------------------------------------------ */
+  --purple-primary: #8b5cf6;
+  --purple-bright: #a78bfa;
+  --purple-deep: #6d28d9;
+  --indigo-accent: #6366f1;
+  /* The fill behind white text. --purple-primary stays the brand colour for
+     borders, rings and accents; white on it is 4.2:1, so a filled button uses
+     a slightly deeper shade, and hovers darker rather than lighter (D73). */
+  --accent-fill: #7a4ae8;
+  --accent-fill-hover: #6d28d9;
+
+  /* --- Text ------------------------------------------------------------- */
+  --text-primary: #f7f5fb;
+  --text-secondary: #b8aec7;
+  /* docs/06 gives #81758f, which measures 3.9:1 on a card — below the AA
+     4.5:1 that docs/06 §12 asks for. Nudged just past it (D73). */
+  --text-muted: #9387a3;
+  --text-on-accent: #ffffff;
+
+  /* --- Status ----------------------------------------------------------- */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+  --info: #60a5fa;
+
+  /* --- Soft tints: badge and chip backgrounds --------------------------- */
+  --purple-soft: rgba(139, 92, 246, 0.16);
+  --indigo-soft: rgba(99, 102, 241, 0.16);
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --danger-soft: rgba(251, 113, 133, 0.14);
+  --info-soft: rgba(96, 165, 250, 0.14);
+  --neutral-soft: rgba(184, 174, 199, 0.12);
+
+  --overlay: rgba(9, 6, 16, 0.62);
+
+  /* --- Badge edges and tinted lines ------------------------------------- */
+  --purple-line: rgba(139, 92, 246, 0.3);
+  --purple-line-soft: rgba(139, 92, 246, 0.28);
+  --indigo-line: rgba(99, 102, 241, 0.3);
+  --indigo-text: #9ea2f8;
+  --success-line: rgba(52, 211, 153, 0.3);
+  --warning-line: rgba(251, 191, 36, 0.3);
+  --danger-line: rgba(251, 113, 133, 0.3);
+  --info-line: rgba(96, 165, 250, 0.3);
+
+  /* --- Decorative tints: placeholder stripe, login glow, drop pulse ----- */
+  --purple-stripe: rgba(139, 92, 246, 0.04);
+  --purple-glow: rgba(139, 92, 246, 0.2);
+  --indigo-glow: rgba(99, 102, 241, 0.14);
+  --purple-pulse: rgba(139, 92, 246, 0.55);
+  --purple-pulse-end: rgba(139, 92, 246, 0);
+
+  /* --- Avatars: six fills, each >= 4.5:1 behind white initials (D73) ---- */
+  --avatar-ring: rgba(255, 255, 255, 0.12);
+  --avatar-1: #7c3aed;
+  --avatar-2: #2563eb;
+  --avatar-3: #0f766e;
+  --avatar-4: #c026d3;
+  --avatar-5: #c2410c;
+  --avatar-6: #4f46e5;
+
+  /* --- Typography (06 §3) ----------------------------------------------- */
+  --font-sans: 'Inter', 'Geist', 'Manrope', system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --fs-xs: 12px;    /* meta, counts */
+  --fs-sm: 13px;    /* supporting text */
+  --fs-md: 14px;    /* body, card title */
+  --fs-lg: 16px;    /* card title large, section title small */
+  --fs-xl: 20px;    /* section title */
+  --fs-2xl: 24px;   /* page title */
+  --fs-3xl: 30px;   /* hero / login */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+
+  /* --- Spacing ---------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* --- Radius (06 §5) --------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* --- Elevation — subtle only, no giant shadows (06 §5) ---------------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.46);
+
+  /* --- Motion (06 §11): everything stays in the 150-220ms band ---------- */
+  --dur-fast: 150ms;
+  --dur-base: 180ms;
+  --dur-slow: 220ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* One-shot attention animations, deliberately outside the 150-220ms
+     transition band (D70): a pulse short enough to fit the band is too
+     short to read as "this just changed". Transitions never use these. */
+  --dur-nudge: 320ms;
+  --dur-pulse: 520ms;
+
+  /* --- Focus ring ------------------------------------------------------- */
+  --focus-ring: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--purple-bright);
+
+  /* --- Layout metrics (06 §4) ------------------------------------------- */
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h: 60px;
+  --column-w: 316px;
+  --column-gap: 16px;
+  --drawer-w: 580px;
+  --content-max: 1360px;
+
+  /* --- Z-index scale ---------------------------------------------------- */
+  --z-sidebar: 10;
+  --z-topbar: 20;
+  --z-drawer: 40;
+  /* Above the drawer on purpose: the drawer's status, priority and reassign
+     controls all open a Menu, and a popover must float above the layer that
+     opened it. Nothing else lives between 40 and 60. */
+  --z-dropdown: 50;
+  --z-modal: 60;
+  --z-toast: 80;
+}

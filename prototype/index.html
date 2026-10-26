@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskFlow — Task Management &amp; Assignment</title>
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/board.css">
+  <link rel="stylesheet" href="css/drawer.css">
+</head>
+<body>
+
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+    <header class="topbar" id="topbar"></header>
+    <main class="main" id="view" tabindex="-1"></main>
+  </div>
+
+  <div id="drawer-root"></div>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" role="status" aria-live="polite"></div>
+
+  <!-- Load order is fixed: mock-data -> state -> i18n -> i18n-th -> permissions -> components ->
+       interactions -> task-detail -> task-create -> division-forms -> topbar
+       -> views/* ->
+       router -> app. Classic scripts only: the prototype runs from file://,
+       where ES modules are blocked. -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/i18n-th.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/interactions.js"></script>
+  <script src="js/task-detail.js"></script>
+  <script src="js/task-create.js"></script>
+  <script src="js/division-forms.js"></script>
+  <script src="js/topbar.js"></script>
+
+  <script src="js/views/login.js"></script>
+  <script src="js/views/dashboard.js"></script>
+  <script src="js/views/my-tasks.js"></script>
+  <script src="js/views/divisions.js"></script>
+  <script src="js/views/projects.js"></script>
+  <script src="js/views/board.js"></script>
+  <script src="js/views/project-settings.js"></script>
+  <script src="js/views/notifications.js"></script>
+  <script src="js/views/admin-users.js"></script>
+  <script src="js/views/admin-divisions.js"></script>
+  <script src="js/views/admin-roles.js"></script>
+
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
