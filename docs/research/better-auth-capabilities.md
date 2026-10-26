@@ -26,7 +26,7 @@ Confidence key: **[doc]** stated in official docs, **[src]** read from Better Au
 - Passwords are hashed with scrypt by default; overridable via `password.hash` / `password.verify`. Default policy 8 to 128 characters. [doc: https://www.better-auth.com/docs/authentication/email-password]
 - Admin plugin adds to `user`: `role` (string), `banned` (bool, default false), `banReason`, `banExpires`; to `session`: `impersonatedBy`. [src: .../plugins/admin/schema.ts]
 - Roles are stored as a comma-separated string, and a user "can hold multiple roles". [doc] This conflicts with our one-Role-per-User decision; we must enforce single role in our own layer (pass a string, never an array).
-- Password reset requires a `sendResetPassword` callback (email delivery). `revokeSessionsOnPasswordReset` defaults off. `changePassword` takes `currentPassword`. [doc: email-password page] The page does not document an admin `setPassword`; the admin plugin's default permission list includes `set-password` under `user`. [doc: admin page] Relevant to the open "initial-password delivery / reset without email" question; the exact admin endpoint was not verified.
+- Password reset requires a `sendResetPassword` callback (email delivery). `revokeSessionsOnPasswordReset` defaults off. `changePassword` takes `currentPassword`. [doc: email-password page] The admin plugin documents `POST /admin/set-user-password` (`auth.api.setUserPassword`, body `userId`, `newPassword`; creates a credential account if missing), guarded by the `user:set-password` permission. [doc: admin page] This lets an admin set or reset a password with no email infrastructure, relevant to the open "initial-password delivery / reset" question.
 - `requireEmailVerification` is optional; with the admin CLI the email is marked verified by default. [doc]
 - Other admin features available: ban/unban (ban revokes all sessions [doc]), impersonation (1 hour default, admins cannot impersonate admins unless `impersonate-admins` permission), session list/revoke/delete permissions. [doc: admin page]
 
@@ -48,7 +48,7 @@ Confidence key: **[doc]** stated in official docs, **[src]** read from Better Au
 - `maximumRolesPerOrganization` caps roles per organization (default unlimited). Extra columns via `schema.organizationRole.additionalFields`. [doc]
 - Use `auth.api.hasPermission` (covers dynamic roles); client `checkRolePermission` ignores dynamic roles. [doc]
 - Constraints: roles are scoped to an organization and assigned to organization members. Using it means adopting organization/member tables (default roles owner/admin/member). Docs do not state that dynamic roles can be used without an organization. [unclear] Whether the org plugin and admin plugin can share one role model is not documented. [unclear]
-- The docs list no column list for `organizationRole` in the rendered page. Generate the schema with the CLI to see it. [unclear]
+- `organizationRole` columns: `id`, `organizationId` (FK to `organization`), `role` (name), `permission` (string, serialized), `createdAt`, `updatedAt` (optional). [doc: organization page, Schema section]
 
 ### Options this implies (for later tickets, not decided here)
 1. Admin plugin with static roles only: fails "Super Admin creates roles".
@@ -88,7 +88,7 @@ Design consequence: check permissions in the data access layer / server actions 
 ## 6. Session invalidation on Role change
 
 - `setRole` (`POST /admin/set-role`) does **not** revoke the user's sessions; only `banUser` calls `deleteUserSessions`. Docs are silent. [src routes.ts; doc unclear]
-- Revocation APIs: `revokeSession({ token })`, `revokeSessions()`, `revokeOtherSessions()` (client, for the current user). [doc: https://www.better-auth.com/docs/concepts/session-management] For an admin revoking another user's sessions, the admin plugin lists a `session:revoke` / `delete` permission; the exact admin endpoints (`revoke-user-sessions`) were not verified here. [unclear]
+- Revocation APIs: `revokeSession({ token })`, `revokeSessions()`, `revokeOtherSessions()` (client, for the current user). [doc: https://www.better-auth.com/docs/concepts/session-management] For an admin revoking another user's sessions, the admin plugin documents `POST /admin/revoke-user-sessions` (body `userId`; also `revoke-user-session` by token and `list-user-sessions`). [doc: admin page] So "revoke after role change" is one extra server call to `auth.api.revokeUserSessions`.
 - Cookie cache: the signed `session_data` cookie lets the server skip the database for `maxAge`; "revoked sessions may remain active on other devices until the cookie cache expires". Options: disable `cookieCache`, shorten `maxAge`, or pass `disableCookieCache: true` for sensitive checks. [doc]
 - `customSession` plugin can add fields (e.g. roles) to `getSession`; its callback runs on every fetch and is not cached, so a role read there is fresh. [doc] The `role` column on `user` itself, if read from the cached session, may be stale until `maxAge`. [inferred]
 - Sessions last 7 days by default (`expiresIn`), refreshed per `updateAge` (1 day); `freshAge` default 1 day. [doc]
@@ -99,7 +99,7 @@ Design consequence: check permissions in the data access layer / server actions 
 1. Does the docs guarantee `createUser` ignores `disableSignUp`? Docs silent; only source shows it. Verify with a test at implementation time.
 2. Dynamic roles without organizations: not documented as possible.
 3. Combining admin plugin and organization plugin role models: not documented.
-4. Exact admin endpoints for setting another user's password and revoking another user's sessions: permissions listed, endpoints not read.
+4. (Resolved) Admin endpoints `set-user-password` and `revoke-user-sessions` are documented; see sections 1 and 6.
 5. Whether `auth generate` preserves custom Prisma models/edits on regeneration.
 6. `createUser` skips minimum password length (source only).
 7. Multi-role comma string versus our single-role rule.
